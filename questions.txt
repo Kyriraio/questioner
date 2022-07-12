@@ -1,0 +1,24 @@
+[
+  {
+    "title": "Cats or dogs ?",
+    "answers": [
+      "cats",
+      "dogs"
+    ]
+  },
+  {
+    "title": "Carrot or tomato ?",
+    "answers": [
+      "carrot",
+      "tomato"
+    ]
+  },
+  {
+    "title": "your favourite number",
+    "answers": [
+      "1",
+      "2",
+      "3"
+    ]
+  }
+]

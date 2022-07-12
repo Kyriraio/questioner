@@ -1,17 +1,29 @@
-<?php  //first of all lets make rough bot with rough methods and no data validation , so I could get the point
+<?php  //first lets make rough bot with rough methods and no data validation , so I could get the point
 session_start();
 
 
 class Telegram{
 
-    private $token;
+    private string $token;
 
-    private $config;
+//я отказался от private $config. Такой подход обеспечивал не нужный мне быстрый доступ к конфигу между вызовами функций
+//однако из-за этого появлялся новый уровень абстракции. Теперь я работаю напрямую с файлом. Мне не нужно лишнее хранилище
+//в будущем придётся хранить все магические строки не в коде, а в конфиге.
+//Почти наверняка нужен private $config... Дожили...
+    private function getConfig()
+    {//there should be the kind of exception
+        return json_decode(file_get_contents("config.txt"),1);
+    }
+
+    private function setConfig($config)
+    {
+        file_put_contents('config.txt',json_encode($config));
+    }
 
     public function __construct(string $token)
     {
         $this->token = $token;
-        $this->config =json_decode(file_get_contents("config.txt"),1);
+
     }
 
 
@@ -21,39 +33,67 @@ class Telegram{
         $data = json_decode(file_get_contents("php://input"), TRUE);
         $text = mb_strtolower($data['message']['text']);
 
-        $counter = $this->config['counter'];
-        $question = json_decode(file_get_contents("questions.txt"), 1)[$counter];
+        switch($text){
+            case '/start':
+                $sendData = [
+                    'text' =>"Hi there.\nYou have just started my quiz.\nPass or die."
+                ];
+            break;
 
-               /* foreach($question['answers'] as $answer)
-                {
-                    $formatAnswers.= "['text' => {$answer}],";
-                }*/
-        $sendData = [
-            'text' => 'Что вы хотите заказать?',
-            'reply_markup'  => [
-                'resize_keyboard' => true,
-                'keyboard' => [
-                    [
-                        ['text' => 'Яблоки'],
-                        ['text' => 'Груши'],
-                    ],
-                    [
-                        ['text' => 'Лук'],
-                        ['text' => 'Чеснок'],
-                    ]
-                ]
-            ]
-        ];
+            case '/help':
+                $sendData = [
+                    'text' =>"It's a simple bot that collect your data and send it to FBI",
+                ];
+            break;
+
+            default:
+                $config = $this->getConfig();
+                $counter = &$config['counter'];
+
+                $questions = json_decode(file_get_contents("questions.txt"), 1);
+                $question = $questions[$counter];
+
+                if (!in_array($text,$question['answers'])) {//Проверка, введено ли что-то кроме ответа на пред вопрос.
+                    //Если да, то повторно высылаем прошлый json с припиской.
+
+                    $sendData = [
+                        'text' =>"Please choose one of the given answers."
+                    ];
+                }
+                else{
+                    file_put_contents('answers.txt',$text."\n", FILE_APPEND);
+
+                    $counter++;
+                    if( $counter > $config['maxCount'])//infinity loop , because why not
+                    {
+                        $counter = 0;
+                    }
+
+                    $this->setConfig($config);
+
+                    $question = $questions[$counter];
+
+                    foreach($question['answers'] as $id => $answer)
+                    {
+                        $formatAnswers[$id]= array('text' => $answer);
+                    }
+
+                    $sendData = [
+                        'text' => $question['title'],
+                        'reply_markup'  => [
+                            'resize_keyboard' => true,
+                            'keyboard' => [
+                                $formatAnswers
+                            ]
+                        ]
+                    ];
+                }
+            break;
+        }
         $sendData['chat_id'] = $data["message"]["chat"]["id"];
 
 
-        file_put_contents('answers.txt',$text."\n", FILE_APPEND);
-        $this->config['counter']++;
-        file_put_contents('config.txt',json_encode($this->config));
-        $chat_id = $data["message"]["chat"]["id"];
-
-        $message = json_decode(file_get_contents("questions.txt"), 1)[$counter]["title"];
-$sendData = json_encode($sendData,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+        $sendData = json_encode($sendData,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
         $curl = curl_init("https://api.telegram.org/bot$this->token/sendMessage");
         curl_setopt_array($curl, [
             CURLOPT_HEADER=>0,
@@ -61,10 +101,12 @@ $sendData = json_encode($sendData,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)
             CURLOPT_HTTPHEADER=>array('Content-Type: application/json'),
             CURLOPT_POSTFIELDS =>$sendData
         ]);
+        //file_put_contents('lastSend.txt',$sendData);
     $result = curl_exec($curl);
-        if(curl_exec($result) === false)
+
+        if($result === false)
         {
-            echo 'Curl error: ' . curl_error($result);
+            echo 'Curl error: ' . curl_error($curl);
         }
         else
         {
@@ -77,8 +119,11 @@ $sendData = json_encode($sendData,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)
     return (json_decode($result, 1) ? json_decode($result, 1) : $result);
 }
 
+
+
+
 }
-DEFINE('TOKEN','1640935985:AAEs2Rhj7tDizcSPWfiEZymS7IBhi7QuyHY');
+const TOKEN = '1640935985:AAEs2Rhj7tDizcSPWfiEZymS7IBhi7QuyHY';
 
 $Bot = new Telegram(TOKEN);
 $result = $Bot->sendMessage();
