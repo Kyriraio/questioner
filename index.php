@@ -75,14 +75,13 @@ class Telegram{
 
                     foreach($question['answers'] as $id => $answer)
                     {
-                        $formatAnswers[$id]= array('text' => $answer);
+                        $formatAnswers[$id]= array('text' => $answer,"callback_data" =>$answer);
                     }
 
                     $sendData = [
                         'text' => $question['title'],
                         'reply_markup'  => [
-                            'resize_keyboard' => true,
-                            'keyboard' => [
+                            'inline_keyboard' => [
                                 $formatAnswers
                             ]
                         ]
