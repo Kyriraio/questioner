@@ -14,7 +14,7 @@
     ]
   },
   {
-    "title": "your favourite number",
+    "title": "Your favourite number",
     "answers": [
       "1",
       "2",
