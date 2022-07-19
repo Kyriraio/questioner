@@ -37,7 +37,7 @@ class Telegram{
 
     private function changeQuestion($counterShift)
     {
-        $config = &$this->config;
+        $config = $this->config;
         $counter = &$config['counter'];
         $counter+=$counterShift;
         $questions = json_decode(file_get_contents("{$this->userId}/questions.txt"), 1);
