@@ -22,6 +22,14 @@ class Telegram{
         file_put_contents("{$this->userId}/config.txt",json_encode($config));
     }
 
+    private function updateKeyboard($keyboard,$choice){
+        foreach($keyboard[0] as &$option) {
+            $option['text'] = mb_substr($option['text'], 0, -1);
+
+            $option['text'].= ($option['text'] != $choice) ? UNCHECKED : CHECKED ;
+        }
+        return $keyboard;
+    }
 
     private function getAnswer($counter)
     {
@@ -55,6 +63,19 @@ class Telegram{
             }
 
             $sendData['text'] = $question['title'];
+            $choice = $this->getAnswer($counter);
+            if(isset($choice)){
+                $sendData['keyboard'] = $this->updateKeyboard($sendData['keyboard'],$choice);
+            }
+
+            if($config['counter']>0)
+                $navigation[] = array('text' => 'prev','callback_data'=> 'prev');
+            if($config['counter']<$config['maxCount'])
+                $navigation[] = array('text' => 'next','callback_data'=> 'next');
+            if($config['counter']==$config['maxCount'])
+                $navigation[] = array('text' => 'end','callback_data'=> 'end');
+
+            $sendData['keyboard'][] = $navigation;
 
             return $sendData;
         }
@@ -95,38 +116,25 @@ class Telegram{
         return (json_decode($result, 1) ? json_decode($result, 1) : $result);
     }
 
-    public function sendMessage(int $chat_id, string $text, array $keyboard = null)
+
+    public function editMessage(string $method, array $message, string $text, array $keyboard = null)
     {
         $data = [
             'text' => $text,
-            'chat_id' => $chat_id
+            'chat_id' => $message["chat"]["id"],
         ];
 
-        if (isset($keyboard)) {
-            $data['reply_markup'] = ['inline_keyboard' => [$keyboard] ];
+        if ($method == 'editMessageText'){
+            $data['message_id'] = $message["message_id"];
         }
-
-        $data = json_encode($data,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
-
-        $curl = curl_init("https://api.telegram.org/bot$this->token/sendMessage");
-        return $this->sendPost($curl,$data);
-    }
-
-    public function editMessage(int $message_id, int $chat_id, string $text, array $keyboard = null)
-    {
-        $data = [
-            'text' => $text,
-            'chat_id' => $chat_id,
-            'message_id' => $message_id
-        ];
-
         if (isset($keyboard)) {
             $data['reply_markup'] = ['inline_keyboard' => $keyboard ];
         }
 
+
         $data = json_encode($data,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
 
-        $curl = curl_init("https://api.telegram.org/bot$this->token/editMessageText");
+        $curl = curl_init("https://api.telegram.org/bot$this->token/$method");
 
         return $this->sendPost($curl,$data);
     }
@@ -135,17 +143,15 @@ class Telegram{
 
 
         $data = json_decode(file_get_contents("php://input"), TRUE);
-
+        $dataBuf = $data['callback_query'] ?? $data['message'];
+        $this->userId = $dataBuf['from']['id'];
+        $this->config =$this->getConfig();
 
         $keyboard = array();
 
         if(isset($data['callback_query'])){
 
-            $data =$data['callback_query'];
-
-            $this->userId = $data['from']['id'];
-            $this->config = $this->getConfig();
-
+            $data = $data['callback_query'];
 
 
             switch($choice = $data['data']){
@@ -160,34 +166,39 @@ class Telegram{
                     $sendText = $questionData['text'];
                     $keyboard = $questionData['keyboard'];
                     break;
+                case 'end':
+                    $sendText = "FBI thank you for your cooperation";
+                    $keyboard[0][0] =array('text' => 'restart','callback_data'=> 'restart');
+                    break;
+                case 'restart':
+                    $questionData = $this->changeQuestion(-$this->getConfig()['maxCount']);
+                    $sendText = $questionData['text'];
+                    $keyboard = $questionData['keyboard'];
+                    break;
                 default:
 
                     $sendText = $data['message']['text'];
                     $keyboard = $data['message']['reply_markup']['inline_keyboard'];
-                    foreach($keyboard[0] as &$option) {
-                        $option['text'] = mb_substr($option['text'], 0, -1);
 
-                        $option['text'].= ($option['text'] != $choice) ? UNCHECKED : CHECKED ;
-                    }
+                    $keyboard = $this->updateKeyboard($keyboard, $choice);
 
                    $this->setAnswer($this->config['counter'], $choice);
 
                     break;
             }
-
-            $keyboard[1] = array();
-            $config = $this->config;
-
-           if($config['counter']>0)
-            $keyboard[1][] = array('text' => 'prev','callback_data'=> 'prev');
-           if($config['counter']<$config['maxCount'])
-            $keyboard[1][] = array('text' => 'next','callback_data'=> 'next');
+            $result = $this->editMessage('editMessageText',$data['message'],$sendText,$keyboard);
         }
+
         else{
             $text = mb_strtolower($data['message']['text']);
 
             switch($text){
                 case '/start':
+                    $questionData = $this->changeQuestion(0);
+                    $sendText = $questionData['text'];
+                    $keyboard = $questionData['keyboard'];
+                    $this->editMessage('sendMessage',$data['message'],$sendText,$keyboard);
+
                     $sendText = "Hi there.\nYou have just started my quiz.\nPass or die.";
                     break;
 
@@ -196,20 +207,12 @@ class Telegram{
                     break;
 
                 default:
-
-
+                    $sendText = "I don't understand";
                     break;
             }
+            $result = $this->editMessage('sendMessage',$data['message'],$sendText);
         }
-
-
-
-        $chat_id = $data["message"]["chat"]["id"];
-        $message_id = $data["message"]["message_id"];
-
-
-         return $this->editMessage($message_id,$chat_id,$sendText,$keyboard);
-
+        return $result;
 }
 
 
