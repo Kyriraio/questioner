@@ -144,7 +144,7 @@ class Telegram{
 
         $data = json_decode(file_get_contents("php://input"), TRUE);
         $dataBuf = $data['callback_query'] ?? $data['message'];
-        $this->userId = $dataBuf['from']['id'];
+        $this->userId = $dataBuf['from'][gi'id'];
         $this->config =$this->getConfig();
 
         $keyboard = array();
