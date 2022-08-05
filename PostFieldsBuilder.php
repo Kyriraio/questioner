@@ -23,6 +23,64 @@ class PostFieldsBuilder // Класс выполняет больше одной
         File::updateConfig($this->config);
     }
 
+    public function prepareDataUsingMessage($message) //слишком большая функция
+    {
+
+        if($isCallback = isset($this->choice))
+        {
+            $this->method = 'editMessageText';
+
+            switch($this->choice){
+                case 'prev':
+                    $this->config['counter']--;
+                    $this->setFieldsByCounter();
+                    break;
+
+                case 'next':
+                    $this->config['counter']++;
+                    $this->setFieldsByCounter();
+                    break;
+                case 'end':
+                    $this->text = "FBI thank you for your cooperation";
+                    $this->addNavigation('restart');
+                    break;
+                case 'restart':
+                    $this->config['counter'] = 0;
+                    $this->setFieldsByCounter();
+                    break;
+                default:
+                    $this->setFieldsByMessage($message);
+                    break;
+            }
+
+        }
+
+        else{
+
+            $this->method = 'sendMessage';
+
+            $text = mb_strtolower($message['text']);
+
+            switch($text){
+                case '/start':
+                    $this->setFieldsByCounter();
+                    $this->method = 'sendMessage';
+                    /*$this->editMessage('sendMessage',$callbackQuery['message'],$sendText,$keyboard);*/
+
+                    break;
+
+                case '/help':
+                    $this->text =  "It's a simple bot that collect your data and send it to FBI";
+                    break;
+
+                default:
+                    $this->text = "I don't understand";
+                    break;
+            }
+        }
+        $this->buildKeyboard();
+    }
+
     protected function showAnswer() : void
     {
         foreach($this->answers as &$option) {
@@ -88,63 +146,17 @@ class PostFieldsBuilder // Класс выполняет больше одной
         $this->text = $question['title'];
 
     }
-    public function prepareDataUsingMessage($message) //слишком большая функция
+
+    private function setFieldsByMessage($message)
     {
+        $this->text = $message['text'];
 
-        if($isCallback = isset($this->choice))
-        {
-            $this->method = 'editMessageText';
-
-            switch($this->choice){
-                case 'prev':
-                    $this->config['counter']--;
-                    $this->setFieldsByCounter();
-                    break;
-
-                case 'next':
-                    $this->config['counter']++;
-                    $this->setFieldsByCounter();
-                    break;
-                case 'end':
-                    $this->text = "FBI thank you for your cooperation";
-                    $this->addNavigation('restart');
-                    break;
-                case 'restart':
-                    $this->config['counter'] = 0;
-                    $this->setFieldsByCounter();
-                    break;
-                default:
-                    $this->setFieldsByMessage($message);
-                    break;
-            }
-
-        }
-
-        else{
-
-            $this->method = 'sendMessage';
-
-            $text = mb_strtolower($message['text']);
-
-            switch($text){
-                case '/start':
-                    $this->setFieldsByCounter();
-                    $this->method = 'sendMessage';
-                    /*$this->editMessage('sendMessage',$callbackQuery['message'],$sendText,$keyboard);*/
-
-                    break;
-
-                case '/help':
-                    $this->text =  "It's a simple bot that collect your data and send it to FBI";
-                    break;
-
-                default:
-                    $this->text = "I don't understand";
-                    break;
-            }
-        }
-        $this->buildKeyboard();
+        $this->keyboard = $message['reply_markup']['inline_keyboard'];
+        $this->answers = $this->keyboard[0];
+        File::updateCurrentAnswer($this->choice);
+        $this->showAnswer();
     }
+
     private function buildKeyboard()
     {
         if(empty($this->keyboard))
@@ -157,15 +169,7 @@ class PostFieldsBuilder // Класс выполняет больше одной
         else if (isset($this->answers))
             $this->keyboard[0] = $this->answers;
     }
-    private function setFieldsByMessage($message)
-    {
-        $this->text = $message['text'];
 
-        $this->keyboard = $message['reply_markup']['inline_keyboard'];
-        $this->answers = $this->keyboard[0];
-        File::updateCurrentAnswer($this->choice);
-        $this->showAnswer();
-    }
     public function getPostFields($message) : array// Должна срабатывать только после prepareDataByMessage()
     {
 

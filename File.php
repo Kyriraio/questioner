@@ -7,14 +7,9 @@ class File
         return json_decode(file_get_contents(CHAT_ID."/$name"), 1);
     }
 
-    public static function update($name, $data)
-    {
-        file_put_contents("C:\OpenServer\domains\questioner/".CHAT_ID."/$name", json_encode($data));
-    }
-
     public static function getQuestions()
     {
-        return self::getArrayOf(QUESTIONS);
+        return json_decode(file_get_contents(QUESTIONS), 1);
     }
 
     public static function getConfig()
@@ -27,9 +22,14 @@ class File
         return self::getArrayOf(ANSWERS);
     }
 
+    public static function update($name, $data)
+    {
+        file_put_contents(__DIR__.'/'.CHAT_ID."/$name", json_encode($data));
+    }
+
     public static function updateConfig($config): void
     {
-        self::update(CONFIG, $config);
+    self::update(CONFIG,$config);
     }
 
     public static function updateCurrentAnswer($data)
