@@ -1,1 +1,1 @@
-{"counter":1,"maxCount":2,"isStarted":0}
+{"counter":0,"maxCount":2}
