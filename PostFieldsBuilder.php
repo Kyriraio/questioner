@@ -18,10 +18,7 @@ class PostFieldsBuilder // Класс выполняет больше одной
         $this->config = File::getConfig();
     }
 
-    public function __destruct()
-    {
-        File::updateConfig($this->config);
-    }
+
 
     public function prepareDataUsingMessage($message) //слишком большая функция
     {
@@ -52,6 +49,7 @@ class PostFieldsBuilder // Класс выполняет больше одной
                     $this->setFieldsByMessage($message);
                     break;
             }
+            File::updateConfig($this->config);
 
         }
 

@@ -1,10 +1,14 @@
 <?php
+//доделать
 class File
 {
 
     public static function getArrayOf($name)
     {
-        return json_decode(file_get_contents(CHAT_ID."/$name"), 1);
+        $path = "users/".CHAT_ID."/$name";
+        return file_exists($path)
+            ? json_decode(file_get_contents($path),1)
+            : json_decode(file_get_contents(PATTERNS),1)[$name];
     }
 
     public static function getQuestions()
@@ -15,6 +19,7 @@ class File
     public static function getConfig()
     {//there should be the kind of exception
         return self::getArrayOf(CONFIG);
+
     }
 
     public static function getAnswers()
@@ -24,7 +29,11 @@ class File
 
     public static function update($name, $data)
     {
-        file_put_contents(__DIR__.'/'.CHAT_ID."/$name", json_encode($data));
+        $path = __DIR__."\users\\".CHAT_ID;
+        if (!is_dir($path) )
+        mkdir($path,0777, true);
+
+        file_put_contents($path."/$name", json_encode($data));
     }
 
     public static function updateConfig($config): void
