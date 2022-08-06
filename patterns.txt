@@ -1,0 +1,4 @@
+{
+"answers.txt":["","",""],
+"config.txt":{"counter":0,"maxCount":2}
+}

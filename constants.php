@@ -3,6 +3,7 @@
 const ANSWERS = 'answers.txt';
 const QUESTIONS = 'questions.txt';
 const CONFIG = 'config.txt';
+const PATTERNS = 'patterns.txt';
 
 const CHECKED = '✅';
 const UNCHECKED = '☑';
