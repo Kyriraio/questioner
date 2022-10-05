@@ -1,7 +1,7 @@
 <?php
-class PostFieldsBuilder // Класс выполняет больше одной задачи, его надо как-то сократить
+class PostFieldsBuilder
 {
-    public array $config;//вот этого здесь быть не должно
+    public array $config;
 
     public string $text;
 
@@ -11,7 +11,7 @@ class PostFieldsBuilder // Класс выполняет больше одной
 
     public string $method;
 
-    public string $choice; // нужно другое название
+    public string $choice; 
 
     public function __construct()
     {
@@ -20,7 +20,7 @@ class PostFieldsBuilder // Класс выполняет больше одной
 
 
 
-    public function prepareDataUsingMessage($message) //слишком большая функция
+    public function prepareDataUsingMessage($message) 
     {
 
         if($isCallback = isset($this->choice))
@@ -63,8 +63,6 @@ class PostFieldsBuilder // Класс выполняет больше одной
                 case '/start':
                     $this->setFieldsByCounter();
                     $this->method = 'sendMessage';
-                    /*$this->editMessage('sendMessage',$callbackQuery['message'],$sendText,$keyboard);*/
-
                     break;
 
                 case '/help':
@@ -103,7 +101,7 @@ class PostFieldsBuilder // Класс выполняет больше одной
 
     }
 
-    public function setFieldsByCounter() : void //слишком большая функция
+    public function setFieldsByCounter() : void
     {
         $counter = $this->config['counter'];
         $maxCount = $this->config['maxCount'];
@@ -111,7 +109,6 @@ class PostFieldsBuilder // Класс выполняет больше одной
         if($counter>$maxCount or $counter<0)
         {
             echo "There's no question with such index";
-            //need exception
         }
 
 
@@ -168,7 +165,7 @@ class PostFieldsBuilder // Класс выполняет больше одной
             $this->keyboard[0] = $this->answers;
     }
 
-    public function getPostFields($message) : array// Должна срабатывать только после prepareDataByMessage()
+    public function getPostFields($message) : array
     {
 
         $postFields = [
