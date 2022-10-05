@@ -48,10 +48,6 @@ $webhookData = $webhookData['message'];
 define('CHAT_ID',$webhookData['chat']['id']);
 require_once 'File.php';
 require_once'PostFieldsBuilder.php';
-// Статический класс File нуждается в этой константе CHAT_ID, т.к все функции её используют.
-// Она ВСЕГДА должна быть до возможного вызова методов класса File, но как?
-// Я нашёл только такой выход
-
 
 $postData = new PostFieldsBuilder();
 if($isCallback) $postData->choice = $choice;
