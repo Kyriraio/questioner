@@ -1,5 +1,5 @@
 <?php
-//доделать
+
 class File
 {
 
@@ -17,7 +17,7 @@ class File
     }
 
     public static function getConfig()
-    {//there should be the kind of exception
+    {
         return self::getArrayOf(CONFIG);
 
     }
